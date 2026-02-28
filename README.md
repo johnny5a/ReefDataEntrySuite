@@ -107,7 +107,3 @@ Developed for the REEF (Reef Environmental Education Foundation) community to st
 ## Support
 
 For issues, feature requests, or questions about this extension, please refer to the REEF data entry documentation or contact the extension developer.
-
-## License
-
-This extension is provided as-is for use with REEF data entry. Fish data and images remain property of FishBase. Map data © OpenStreetMap contributors.
