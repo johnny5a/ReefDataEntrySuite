@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "REEF DataEntry Suite",
-  "version": "1.3.4",
+  "version": "2028.02.28",
   "description": "Complete REEF data entry toolkit: navigation controls, fish image previews from FishBase, and interactive site maps with GPS.",
   "icons": {
     "16": "icon16.png",
