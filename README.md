@@ -86,7 +86,8 @@ Right-click the extension icon and select "Options" to customize:
 
 ## Version History
 
-### v1.0.0 (Current)
+### v2028.02.28 (Current)
+- First Release on GitHub
 - Initial combined release
 - Merged functionality from three separate extensions:
   - **Buttons** (v2.4.2): Navigation controls
