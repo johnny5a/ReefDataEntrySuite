@@ -1,0 +1,93 @@
+{
+  "manifest_version": 3,
+  "name": "REEF DataEntry Suite",
+  "version": "1.3.4",
+  "description": "Complete REEF data entry toolkit: navigation controls, fish image previews from FishBase, and interactive site maps with GPS.",
+  "icons": {
+    "16": "icon16.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
+  },
+  "permissions": [
+    "activeTab",
+    "declarativeNetRequest",
+    "storage"
+  ],
+  "host_permissions": [
+    "https://www.fishbase.se/*",
+    "https://tile.openstreetmap.org/*",
+    "https://*.reef.org/*",
+    "http://*.reef.org/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://data.reef.org/dataentry*",
+        "https://www.reef.org/dataentry*",
+        "https://reef.org/dataentry*"
+      ],
+      "exclude_matches": [
+        "https://data.reef.org/dataentry/",
+        "https://data.reef.org/dataentry/index.php",
+        "https://www.reef.org/dataentry/",
+        "https://www.reef.org/dataentry/index.php",
+        "https://reef.org/dataentry/",
+        "https://reef.org/dataentry/index.php"
+      ],
+      "all_frames": true,
+      "js": ["content-main.js"],
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "https://www.reef.org/*",
+        "https://reef.org/*",
+        "https://*.reef.org/*",
+        "http://*.reef.org/*"
+      ],
+      "exclude_matches": [
+        "https://www.reef.org/dataentry",
+        "https://reef.org/dataentry"
+      ],
+      "all_frames": true,
+      "js": ["content-map.js"],
+      "css": ["styles.css"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": [
+        "https://data.reef.org/dataentry/*"
+      ],
+      "exclude_matches": [
+        "https://data.reef.org/dataentry/",
+        "https://data.reef.org/dataentry/index.php"
+      ],
+      "all_frames": true,
+      "js": ["content-frame.js"],
+      "css": ["styles.css"],
+      "run_at": "document_end"
+    },
+    {
+      "matches": [
+        "https://data.reef.org/dataentry/*unlisted*",
+        "https://data.reef.org/dataentry/*addfish*"
+      ],
+      "all_frames": true,
+      "js": ["content-unlisted.js"],
+      "run_at": "document_end"
+    }
+  ],
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["styles.css"],
+      "matches": ["https://*.reef.org/*", "http://*.reef.org/*"]
+    }
+  ]
+}

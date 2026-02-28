@@ -1,0 +1,233 @@
+/* ========================================
+   REEF DataEntry Suite - Combined Styles
+   Merges styles from Reef extension + Map extension
+   ======================================== */
+
+/* ===== Column width & thumbnail variables (overridden by JS) ===== */
+:root {
+  --rfsp-col-number-width: 40px;
+  --rfsp-col-count-width: 80px;
+  --rfsp-thumb-height: 90px;
+  --rfsp-thumb-wrapper-width: 108px;
+  --rfsp-col-thumb-width: 146px;
+}
+
+/* Number column */
+td.rfsp-col-number {
+  width: var(--rfsp-col-number-width);
+  min-width: var(--rfsp-col-number-width);
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* Count / select column */
+td.rfsp-col-count {
+  width: var(--rfsp-col-count-width);
+  min-width: var(--rfsp-col-count-width);
+  text-align: center;
+  white-space: nowrap;
+}
+
+td.rfsp-col-count input[type="text"],
+td.rfsp-col-count input[type="number"],
+td.rfsp-col-count select {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Thumbnail column cell */
+td.fish-inline-preview-cell,
+td.rfsp-col-thumb {
+  width: var(--rfsp-col-thumb-width);
+  min-width: var(--rfsp-col-thumb-width);
+  text-align: right;
+  vertical-align: middle;
+  padding-left: 8px;
+  white-space: nowrap;
+}
+
+/* Thumbnail wrapper (sized by JS-set vars) */
+.fish-inline-preview {
+  display: inline-block;
+  width: var(--rfsp-thumb-wrapper-width);
+  height: var(--rfsp-thumb-wrapper-min-height);
+  background: #f0f0f0;
+  border: 1px solid rgba(0,0,0,.15);
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.15);
+  overflow: hidden;
+  vertical-align: middle;
+}
+
+/* Image scales to BOTH wrapper width and height without cropping */
+.fish-inline-preview img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* Tighter spacing for the abundance radios */
+.rfsp-presence-wrap{
+  line-height: 1.1;
+  row-gap: 2px !important;
+  column-gap: 8px !important;
+}
+
+.rfsp-presence-wrap > span{
+  gap: 4px !important;
+}
+
+.rfsp-presence-wrap input[type="radio"],
+.rfsp-presence-wrap label{
+  margin: 0;
+}
+
+/* Scoped fish table font size */
+.rfsp-fish-scope {
+  font-size: var(--rfsp-fish-font-size, 14px) !important;
+  line-height: 1.2;
+}
+
+.rfsp-fish-scope td,
+.rfsp-fish-scope th,
+.rfsp-fish-scope input,
+.rfsp-fish-scope select,
+.rfsp-fish-scope textarea,
+.rfsp-fish-scope label,
+.rfsp-fish-scope .rfsp-presence-wrap {
+  font-size: inherit !important;
+  line-height: inherit;
+}
+
+/* ========================================
+   Map Styles (from reef-map-inset-ext-v3_13)
+   ======================================== */
+
+/* Footer map card */
+#rfsp-map-inset-card{
+  position: static;
+  z-index: 2147483000;
+  margin: 0;
+  border: 1px solid #9aa0a6;
+  border-radius: 8px;
+  margin-top: 24px;
+  background: #fafafa;
+  padding: 8px;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  box-shadow: none;
+}
+
+#rfsp-map-inset-title{
+  font-weight: 600;
+  margin: 0 0 6px 0;
+  font-size: 14px;
+}
+
+#rfsp-map{
+  width: 100%;
+  height: 35vh;
+  border-radius: 6px;
+  position: relative;
+  background: #ddd;
+  overflow: hidden;
+}
+
+#rfsp-map-legend{
+  font-size: 12px;
+  margin-top: 6px;
+  color: #444;
+}
+
+/* Panes */
+#rfsp-tile-pane, #rfsp-marker-pane {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.rfsp-marker{
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #2563eb;
+  box-shadow: 0 0 0 2px #fff;
+  transform: translate(-9px,-9px);
+  cursor: pointer;
+}
+
+/* Popup for marker */
+#rfsp-popup{
+  position:absolute;
+  pointer-events:none;
+  background:#111;
+  color:#fff;
+  font: 12px system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  padding:6px 8px;
+  border-radius:6px;
+  box-shadow:0 4px 12px rgba(0,0,0,.25);
+  transform: translate(-50%, -120%);
+  z-index: 1001;
+  white-space: nowrap;
+}
+
+#rfsp-popup::after{
+  content:"";
+  position:absolute;
+  left:50%;
+  bottom:-6px;
+  width:0;
+  height:0;
+  border-left:6px solid transparent;
+  border-right:6px solid transparent;
+  border-top:6px solid #111;
+  transform: translateX(-50%);
+}
+
+/* Controls overlay */
+#rfsp-map-controls{
+  position: absolute;
+  right: 10px;
+  top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  z-index: 1000;
+}
+
+.rfsp-btn{
+  border: 1px solid #9aa0a6;
+  background: #fff;
+  border-radius: 6px;
+  padding: 6px 8px;
+  font: 13px system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  cursor: pointer;
+  user-select: none;
+  box-shadow: 0 1px 2px rgba(0,0,0,.08);
+}
+
+.rfsp-btn:active{
+  transform: translateY(1px);
+}
+
+/* Info panel (click details) */
+#rfsp-info{
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+  background: rgba(255,255,255,.95);
+  border: 1px solid #9aa0a6;
+  border-radius: 6px;
+  padding: 8px 10px;
+  font: 12px/1.35 system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  z-index: 1000;
+  max-width: 60%;
+  box-shadow: 0 1px 2px rgba(0,0,0,.08);
+}
+
+#rfsp-info b{
+  font-weight: 600;
+}

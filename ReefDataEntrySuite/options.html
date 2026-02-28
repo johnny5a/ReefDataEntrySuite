@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>REEF DataEntry Suite — Info and Settings</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body {
+      font: 14px/1.4 system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      margin: 16px;
+      color: #111;
+      max-width: 800px;
+    }
+    h1 {
+      font-size: 18px;
+      margin-bottom: 12px;
+    }
+    h2 {
+      font-size: 16px;
+      margin-top: 24px;
+      margin-bottom: 12px;
+      color: #333;
+      border-bottom: 2px solid #e5e7eb;
+      padding-bottom: 6px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 220px 1fr;
+      gap: 10px 14px;
+      align-items: center;
+      max-width: 560px;
+    }
+    label { color: #333; }
+    input[type="number"], select {
+      padding: 6px 8px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      width: 140px;
+    }
+    .row { display: contents; }
+    .actions {
+      margin-top: 16px;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    #save {
+      padding: 8px 14px;
+      border: 1px solid #888;
+      border-radius: 6px;
+      background: #f5f5f5;
+      cursor: pointer;
+    }
+    #status { color: #0b70ff; }
+    hr { margin: 16px 0; border: 0; height: 1px; background: #eee; }
+    small.hint { color: #666; display: block; margin-top: 2px; }
+    .hotkeys-section {
+      background: #f8f9fa;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 24px;
+    }
+    .hotkeys-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+      margin-top: 12px;
+    }
+    .hotkey-group h3 {
+      font-size: 14px;
+      font-weight: 600;
+      color: #111;
+      margin: 0 0 8px 0;
+    }
+    .hotkey-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .hotkey-list li {
+      padding: 4px 0;
+      font-size: 13px;
+      display: flex;
+      align-items: baseline;
+    }
+    .key {
+      display: inline-block;
+      background: #fff;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      padding: 2px 8px;
+      font-family: 'Courier New', monospace;
+      font-weight: 600;
+      font-size: 12px;
+      min-width: 24px;
+      text-align: center;
+      margin-right: 8px;
+      color: #333;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    }
+    .key-desc {
+      color: #555;
+      flex: 1;
+    }
+    .species-item {
+      padding: 8px 12px;
+      border-bottom: 1px solid #e5e7eb;
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+    }
+    .species-item:last-child {
+      border-bottom: none;
+    }
+    .species-name {
+      font-weight: 600;
+      color: #111;
+    }
+    .species-scientific {
+      color: #666;
+      font-style: italic;
+      font-size: 13px;
+      margin-left: 8px;
+    }
+    .species-date {
+      color: #888;
+      font-size: 12px;
+    }
+    .species-delete {
+      background: none;
+      border: none;
+      color: #dc2626;
+      cursor: pointer;
+      padding: 4px 8px;
+      font-size: 14px;
+      margin-left: 12px;
+      opacity: 0.7;
+      transition: opacity 0.2s;
+    }
+    .species-delete:hover {
+      opacity: 1;
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <h1>REEF DataEntry Suite — Info and Settings</h1>
+
+  <div class="hotkeys-section">
+    <h2 style="margin-top:0; border:0; padding:0;">⌨️ Keyboard Shortcuts</h2>
+    <p style="margin: 8px 0; color: #555;">Use these shortcuts for faster fish data entry</p>
+
+    <div class="hotkeys-grid">
+      <div class="hotkey-group">
+        <h3>Abundance Surveys</h3>
+        <ul class="hotkey-list">
+          <li><span class="key">0</span><span class="key">N</span><span class="key-desc">None</span></li>
+          <li><span class="key">1</span><span class="key">S</span><span class="key-desc">Single (1)</span></li>
+          <li><span class="key">2</span><span class="key">F</span><span class="key-desc">Few (2-10)</span></li>
+          <li><span class="key">3</span><span class="key">M</span><span class="key-desc">Many (11-100)</span></li>
+          <li><span class="key">4</span><span class="key">A</span><span class="key-desc">Abundant (101+)</span></li>
+        </ul>
+      </div>
+
+      <div class="hotkey-group">
+        <h3>Species Surveys</h3>
+        <ul class="hotkey-list">
+          <li><span class="key">Space</span><span class="key-desc">Check/uncheck "Present"</span></li>
+          <li><span class="key-desc">Works with checkbox surveys</span></li>
+        </ul>
+      </div>
+
+      <div class="hotkey-group">
+        <h3>Navigation</h3>
+        <ul class="hotkey-list">
+          <li><span class="key">↓</span><span class="key-desc">Next fish</span></li>
+          <li><span class="key">↑</span><span class="key-desc">Previous fish</span></li>
+          <li><span class="key">Enter</span><span class="key-desc">Advance to next row</span></li>
+          <li><span class="key">Tab</span><span class="key-desc">Advance to next row</span></li>
+        </ul>
+      </div>
+
+      <div class="hotkey-group">
+        <h3>Row Interaction</h3>
+        <ul class="hotkey-list">
+          <li><span class="key-desc"><strong>Click row</strong> — Select row</span></li>
+          <li><span class="key-desc"><strong>Double-click row</strong> — Cycle through values</span></li>
+        </ul>
+        <h3 style="margin-top: 12px;">Visual Feedback</h3>
+        <ul class="hotkey-list">
+          <li><span class="key-desc">🟨 Yellow — Active row</span></li>
+          <li><span class="key-desc">🟩 Green — Completed rows</span></li>
+        </ul>
+      </div>
+
+      <div class="hotkey-group">
+        <h3>Unlisted Species (NEW!)</h3>
+        <ul class="hotkey-list">
+          <li><span class="key">↓</span><span class="key">↑</span><span class="key-desc">Navigate search results</span></li>
+          <li><span class="key">Enter</span><span class="key-desc">Select highlighted species</span></li>
+          <li><span class="key-desc"><strong>Recent species</strong> — Quick re-add</span></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="hotkeys-section">
+    <h2 style="margin-top:0; border:0; padding:0;">🐠 Recently Added Unlisted Species</h2>
+    <p style="margin: 8px 0; color: #555;">The last 20 unlisted species you've added to your surveys</p>
+    <div id="recentSpeciesList" style="margin-top: 12px;">
+      <p style="color: #888; font-style: italic;">No recent unlisted species yet.</p>
+    </div>
+  </div>
+
+  <h2>Fish Image Preview Settings</h2>
+
+  <!-- Add inside your existing options form -->
+<div class="field">
+  <label for="fishFontSize"><strong>Fish table text size</strong> (<span id="fishFontSizeValue">14</span>px)</label>
+  <input id="fishFontSize" type="range" min="10" max="24" step="1">
+  <div class="hint">Affects only the fish table. Default is 14px.</div>
+</div>
+
+  <div class="grid">
+    <!-- Hover delay -->
+    <div class="row">
+      <label for="hoverDelay">Hover delay (ms)</label>
+      <div>
+        <input id="hoverDelay" type="number" min="0" step="25" />
+        <small class="hint">Time to wait before showing popup when hovering a thumbnail.</small>
+      </div>
+    </div>
+
+    <!-- Tooltip position -->
+    <div class="row">
+      <label for="tooltipPosition">Tooltip position</label>
+      <div>
+        <select id="tooltipPosition">
+          <option value="right">Right of thumbnail</option>
+          <option value="left">Left of thumbnail</option>
+          <option value="above">Above thumbnail</option>
+          <option value="below">Below thumbnail</option>
+        </select>
+        <small class="hint">Where to place the popup relative to the thumbnail.</small>
+      </div>
+    </div>
+
+    <hr class="row" />
+
+    <!-- Thumbnail height -->
+    <div class="row">
+      <label for="thumbHeight">Thumbnail height (px)</label>
+      <div>
+        <input id="thumbHeight" type="number" min="40" step="10" />
+        <small class="hint">Used as a minimum height placeholder to avoid page bounce.</small>
+      </div>
+    </div>
+
+    <hr class="row" />
+
+    <!-- Popup width -->
+    <div class="row">
+      <label for="popupWidth">Popup width (px)</label>
+      <div>
+        <input id="popupWidth" type="number" min="180" step="20" />
+        <small class="hint">Outer width of the preview tooltip.</small>
+      </div>
+    </div>
+
+    <!-- Popup image max width -->
+    <div class="row">
+      <label for="popupImgMaxWidth">Popup image max width (px)</label>
+      <div>
+        <input id="popupImgMaxWidth" type="number" min="50" step="10" />
+        <small class="hint">Image is constrained within the popup to this width.</small>
+      </div>
+    </div>
+
+    <!-- Popup image max height -->
+    <div class="row">
+      <label for="popupImgMaxHeight">Popup image max height (px)</label>
+      <div>
+        <input id="popupImgMaxHeight" type="number" min="50" step="10" />
+        <small class="hint">Image is constrained within the popup to this height.</small>
+      </div>
+    </div>
+  </div>
+<!-- Fish table max width -->
+<div class="row">
+  <label for="fishTableMaxWidth">Fish table max width (px)</label>
+  <div>
+    <input id="fishTableMaxWidth" type="number" min="200" step="10" />
+    <small class="hint">
+      The fish table will be wrapped and centered to this width. Default: 500.
+    </small>
+  </div>
+</div>
+
+  <div class="actions">
+    <button id="save" type="button">Save</button>
+    <span id="status" role="status" aria-live="polite"></span>
+  </div>
+
+  <script src="options.js"></script>
+</body>
+</html>
