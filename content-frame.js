@@ -1,6 +1,6 @@
 // content-frame.js — REEF DataEntry Suite Frame Content
 // Combines iframe message handlers + fish image previews from FishBase
-// v1.0.0
+// Part of REEF DataEntry Suite (see manifest.json for version)
 
 // Detect if we're on an unlisted/addfish page early
 // (defined at top so all IIFEs can use it)
@@ -19,11 +19,76 @@ console.log("[REEF Suite - Frame] isUnlistedPage:", isUnlistedPage);
   const NS_FAMS          = "rfsp-families";
   const NS_FAM_SCROLLED  = "rfsp-fam-scrolled";
   const NS_FAM_MEASURED  = "rfsp-fam-measured";
+  const NS_SIZE          = "rfsp-size";
   const LOG = (...a) => console.log("[REEF Suite - Frame]", ...a);
 
+  // The parent data-entry page lives on www.reef.org; only talk to it.
+  const PARENT_ORIGIN = "https://www.reef.org";
+  const toParent = (msg) => { try { (window.parent || window.top).postMessage(msg, PARENT_ORIGIN); } catch {} };
+
   function sendPageInfo() {
-    try { (window.parent || window.top).postMessage({ ns: NS_PAGE, href: location.href, path: location.pathname }, "*"); } catch {}
+    toParent({ ns: NS_PAGE, href: location.href, path: location.pathname });
   }
+
+  // Report our content height so the parent can grow the iframe to fit
+  // (the iframe element is cross-origin, so the parent has to do the resize).
+  let lastSentHeight = 0;
+  const px = (v) => parseFloat(v) || 0;
+
+  // Measure the real extent of the content, not the viewport. REEF's pages
+  // render in quirks mode, where body.scrollHeight / documentElement.scrollHeight
+  // report the viewport height - which equals whatever size the parent just
+  // gave us - so using them makes the frame ratchet upward and leaves blank
+  // space at the bottom. Instead, take the lowest bottom edge of the body's
+  // in-flow children plus the body's own bottom spacing.
+  function measureHeight() {
+    const body = document.body;
+    if (!body) return 0;
+    const scrollY = window.scrollY || document.documentElement.scrollTop || 0;
+
+    const bcs = getComputedStyle(body);
+    let bottom = 0;
+    for (const el of body.children) {
+      if (el.id === "fish-tooltip") continue;           // our own floating popup
+      const cs = getComputedStyle(el);
+      if (cs.display === "none" || cs.position === "fixed") continue;
+      const r = el.getBoundingClientRect();
+      if (!r.height && !r.width) continue;
+      bottom = Math.max(bottom, r.bottom + px(cs.marginBottom));
+    }
+    if (bottom) {
+      bottom += px(bcs.paddingBottom) + px(bcs.borderBottomWidth);
+    } else {
+      // No measurable children (unusual); fall back to the body box itself.
+      bottom = body.getBoundingClientRect().bottom;
+    }
+    bottom += scrollY + px(bcs.marginBottom);
+
+    // Small breathing room so the last row's focus outline isn't clipped.
+    return Math.ceil(bottom + 8);
+  }
+  // Stop html/body (and anything sized as a % of them) from stretching to the
+  // viewport, which would otherwise make the content "grow" to whatever height
+  // the parent just gave the frame.
+  function neutralizeViewportHeight() {
+    if (window === window.top || document.getElementById("rfsp-fit-css")) return;
+    const st = document.createElement("style");
+    st.id = "rfsp-fit-css";
+    st.textContent = "html, body { height: auto !important; min-height: 0 !important; }";
+    (document.head || document.documentElement).appendChild(st);
+  }
+
+  function sendSize(force) {
+    if (window === window.top) return;
+    neutralizeViewportHeight();
+    const h = measureHeight();
+    if (!h) return;
+    if (!force && Math.abs(h - lastSentHeight) < 2) return;
+    lastSentHeight = h;
+    toParent({ ns: NS_SIZE, height: h, path: location.pathname });
+  }
+  let sizeTimer = null;
+  const sendSizeSoon = () => { clearTimeout(sizeTimer); sizeTimer = setTimeout(() => sendSize(false), 120); };
 
   function scanFamilyRows() {
     return Array.from(document.querySelectorAll("tr.questionbold")).filter(tr => {
@@ -39,7 +104,7 @@ console.log("[REEF Suite - Frame] isUnlistedPage:", isUnlistedPage);
       const docY = rect.top + (window.scrollY || document.documentElement.scrollTop || 0);
       return { name, y: docY };
     });
-    try { (window.parent || window.top).postMessage({ ns: NS_FAMS, families: list }, "*"); } catch {}
+    toParent({ ns: NS_FAMS, families: list });
   }
 
   function clickCandidate(list){
@@ -57,6 +122,7 @@ console.log("[REEF Suite - Frame] isUnlistedPage:", isUnlistedPage);
     if (!/^https?:\/\/([a-z0-9-]+\.)*reef\.org$/i.test(ev.origin || "")) return;
 
     if (d.action === "FAMILY_LIST_REQ") { sendFamilies(); return; }
+    if (d.action === "SIZE_REQ") { sendSize(true); return; }
 
     if (d.action === "FAMILY_SCROLL_TO_INDEX") {
       const rows = scanFamilyRows(); if (!rows.length) return;
@@ -64,7 +130,7 @@ console.log("[REEF Suite - Frame] isUnlistedPage:", isUnlistedPage);
       const tr = rows[i];
       try { tr.scrollIntoView({ block: "start" }); } catch { tr.scrollIntoView(true); }
       const rect = tr.getBoundingClientRect();
-      (window.parent || window.top).postMessage({ ns: NS_FAM_SCROLLED, index: i, clientTop: rect.top }, "*");
+      toParent({ ns: NS_FAM_SCROLLED, index: i, clientTop: rect.top });
       return;
     }
 
@@ -73,7 +139,7 @@ console.log("[REEF Suite - Frame] isUnlistedPage:", isUnlistedPage);
       const i = Math.min(Math.max(0, Number(d.index) || 0), rows.length - 1);
       const tr = rows[i];
       const rect = tr.getBoundingClientRect();
-      (window.parent || window.top).postMessage({ ns: NS_FAM_MEASURED, index: i, clientTop: rect.top }, "*");
+      toParent({ ns: NS_FAM_MEASURED, index: i, clientTop: rect.top });
       return;
     }
 
@@ -96,15 +162,25 @@ console.log("[REEF Suite - Frame] isUnlistedPage:", isUnlistedPage);
     }
   }, false);
 
-  // Keep families fresh if DOM changes
+  // Keep families + reported size fresh if DOM changes (debounced)
   try {
-    const mo = new MutationObserver(() => { clearTimeout(mo._t); mo._t = setTimeout(sendFamilies, 250); });
+    const mo = new MutationObserver(() => {
+      clearTimeout(mo._t);
+      mo._t = setTimeout(() => { sendFamilies(); sendSize(false); }, 250);
+    });
     mo.observe(document.documentElement, { childList: true, subtree: true });
   } catch {}
+  try {
+    if ("ResizeObserver" in window && document.body) {
+      new ResizeObserver(sendSizeSoon).observe(document.body);
+    }
+  } catch {}
+  window.addEventListener("resize", sendSizeSoon, { passive: true });
 
-  window.addEventListener("DOMContentLoaded", () => { sendPageInfo(); sendFamilies(); }, { once:true });
-  window.addEventListener("load", () => { sendPageInfo(); sendFamilies(); }, { once:true });
-  setTimeout(() => { sendPageInfo(); sendFamilies(); }, 600);
+  const announce = () => { sendPageInfo(); sendFamilies(); sendSize(true); };
+  window.addEventListener("DOMContentLoaded", announce, { once:true });
+  window.addEventListener("load", announce, { once:true });
+  setTimeout(announce, 600);
 })();
 
 // ========================================
@@ -139,9 +215,16 @@ chrome.storage.sync.get(
     popupWidth: 320,
     popupImgMaxWidth: 300,
     popupImgMaxHeight: 200,
-    fishTableMaxWidth: 500
+    fishTableMaxWidth: 500,
+    showPreviewsOnUnlisted: true
   },
   (items) => {
+    // Check if we should skip fish previews on unlisted pages
+    if (isUnlistedPage && !items.showPreviewsOnUnlisted) {
+      console.log("[REEF Suite - Frame] Fish previews disabled on unlisted pages per user settings");
+      return; // Skip initialization
+    }
+
     HOVER_DELAY_MS       = items.hoverDelay;
     TOOLTIP_POSITION     = items.tooltipPosition;
     THUMB_HEIGHT         = items.thumbHeight;
@@ -151,7 +234,6 @@ chrome.storage.sync.get(
     FISH_TABLE_MAX_WIDTH = items.fishTableMaxWidth;
 
     applyThumbCssVariables();
-    warmCachedImagesForCurrentRows();
     rfspWrapAndCenterFishTables();
     document.querySelectorAll("tr").forEach(bindRow);
   }
@@ -281,26 +363,51 @@ function placeTipNearElement(el) {
 
 function renderTip(info) {
   const { image, url, sci } = info;
-  tip.innerHTML = `
-    <div class="fish-tip-inner" style="width:${POPUP_WIDTH}px">
-      <div class="fish-tip-actions" style="text-align:right;margin-bottom:4px;">
-        <button class="fish-pin" title="${pinned ? "Unpin" : "Pin"}">${pinned ? "📌" : "📍"}</button>
-        <button class="fish-close" title="Close">❌</button>
-      </div>
-      <img src="${image}" alt="${sci}" referrerpolicy="no-referrer"
-           style="max-width:${POPUP_IMG_MAX_WIDTH}px; max-height:${POPUP_IMG_MAX_HEIGHT}px;
-                  width:auto; height:auto; display:block; border-radius:4px;" />
-      ${url ? `<div class="fish-tip-link" style="text-align:right;margin-top:6px;">
-                 <a href="${url}" target="_blank" rel="noopener" style="color:#0b70ff;text-decoration:none;">View on FishBase</a>
-               </div>` : ""}
-    </div>`;
+  // Built with DOM APIs (not innerHTML) so values from FishBase/REEF pages are
+  // never interpreted as markup.
+  tip.replaceChildren();
 
-  tip.querySelector(".fish-close").addEventListener("click", (e) => {
+  const inner = document.createElement("div");
+  inner.className = "fish-tip-inner";
+  inner.style.width = POPUP_WIDTH + "px";
+
+  const actions = document.createElement("div");
+  actions.className = "fish-tip-actions";
+  actions.style.cssText = "text-align:right;margin-bottom:4px;";
+  const pinBtn = document.createElement("button");
+  pinBtn.type = "button"; pinBtn.className = "fish-pin";
+  pinBtn.title = pinned ? "Unpin" : "Pin";
+  pinBtn.textContent = pinned ? "📌" : "📍";
+  const closeBtn = document.createElement("button");
+  closeBtn.type = "button"; closeBtn.className = "fish-close";
+  closeBtn.title = "Close"; closeBtn.textContent = "❌";
+  actions.append(pinBtn, closeBtn);
+
+  const img = document.createElement("img");
+  img.src = image; img.alt = sci || ""; img.referrerPolicy = "no-referrer";
+  img.style.cssText = `max-width:${POPUP_IMG_MAX_WIDTH}px; max-height:${POPUP_IMG_MAX_HEIGHT}px; width:auto; height:auto; display:block; border-radius:4px;`;
+
+  inner.append(actions, img);
+
+  if (url) {
+    const linkWrap = document.createElement("div");
+    linkWrap.className = "fish-tip-link";
+    linkWrap.style.cssText = "text-align:right;margin-top:6px;";
+    const a = document.createElement("a");
+    a.href = url; a.target = "_blank"; a.rel = "noopener";
+    a.style.cssText = "color:#0b70ff;text-decoration:none;";
+    a.textContent = "View on FishBase";
+    linkWrap.appendChild(a);
+    inner.appendChild(linkWrap);
+  }
+  tip.appendChild(inner);
+
+  closeBtn.addEventListener("click", (e) => {
     e.stopPropagation();
     pinned = false;
     hideTip();
   });
-  tip.querySelector(".fish-pin").addEventListener("click", (e) => {
+  pinBtn.addEventListener("click", (e) => {
     e.stopPropagation();
     pinned = !pinned;
     renderTip(info);
@@ -333,15 +440,40 @@ const inflight = new Map();
 let persistentCache = {};
 chrome.storage.local.get({ rfspImageCache: {} }, (res) => {
   persistentCache = res.rfspImageCache || {};
-  warmCachedImagesForCurrentRows();
+  // Migrate cached entries that point at www.fishbase.us (now hotlink-blocked
+  // with HTTP 403) over to www.fishbase.se, which serves the same paths.
+  let migrated = false;
+  for (const key of Object.keys(persistentCache)) {
+    const entry = persistentCache[key];
+    const img = entry?.data?.image;
+    if (typeof img === "string" && /^https?:\/\/www\.fishbase\.us\//i.test(img)) {
+      entry.data.image = img.replace(/^(https?:\/\/)www\.fishbase\.us\//i, "$1www.fishbase.se/");
+      migrated = true;
+    }
+  }
+  if (migrated) chrome.storage.local.set({ rfspImageCache: persistentCache });
 });
 
+// Found images are kept indefinitely; "not found" results are remembered for
+// a week so species FishBase doesn't know aren't re-fetched on every page load.
+const NEGATIVE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+
 function getPersistedInfo(sci) {
-  return persistentCache?.[sci]?.data || null;
+  const entry = persistentCache?.[sci];
+  if (!entry) return undefined;                       // unknown -> fetch
+  if (entry.data) return entry.data;                  // hit
+  if (entry.ts && Date.now() - entry.ts < NEGATIVE_TTL_MS) return null; // known miss
+  return undefined;                                   // stale miss -> retry
 }
+
+let _persistTimer = null;
 function setPersistedInfo(sci, data) {
-  persistentCache[sci] = { data, ts: Date.now() };
-  chrome.storage.local.set({ rfspImageCache: persistentCache });
+  persistentCache[sci] = { data: data || null, ts: Date.now() };
+  // Coalesce writes: a page load can resolve dozens of species in a burst.
+  clearTimeout(_persistTimer);
+  _persistTimer = setTimeout(() => {
+    chrome.storage.local.set({ rfspImageCache: persistentCache });
+  }, 500);
 }
 
 let _active = 0;
@@ -364,7 +496,7 @@ async function requestFishbaseInfo(scientificName) {
   if (cache.has(scientificName)) return cache.get(scientificName);
 
   const persisted = getPersistedInfo(scientificName);
-  if (persisted) {
+  if (persisted !== undefined) {
     cache.set(scientificName, persisted);
     return persisted;
   }
@@ -377,7 +509,7 @@ async function requestFishbaseInfo(scientificName) {
         let out = null;
         if (resp && resp.ok) out = { image: resp.data?.image || null, url: resp.data?.url || null };
         cache.set(scientificName, out);
-        if (out) setPersistedInfo(scientificName, out);
+        setPersistedInfo(scientificName, out);
         inflight.delete(scientificName);
         resolve(out);
       });
@@ -392,7 +524,7 @@ async function requestFishbaseInfo(scientificName) {
 function normalizeSci(raw) {
   return String(raw || "")
     .replace(/[()]/g, "")
-    .replace(/\b(cf\.|aff\.|sp\.|spp\.)\b.*$/i, "")
+    .replace(/\s+(cf|aff|sp|spp)\.?(\s.*)?$/i, "")
     .replace(/[^\p{L}\-\s]/gu, " ")
     .replace(/\s+/g, " ")
     .trim();
@@ -432,8 +564,6 @@ function applyThumbCssVariables() {
   root.setProperty("--rfsp-thumb-wrapper-width", wrapperW + "px");
   root.setProperty("--rfsp-col-thumb-width", cellWidth + "px");
 }
-
-function resizeExistingThumbs() { }
 
 function ensureShellForRow(row) {
   let td = row.querySelector("td.fish-inline-preview-cell");
@@ -493,8 +623,6 @@ async function populateInlinePreview(row, sci) {
 
   attachHover(wrap, info, sci);
 }
-
-function warmCachedImagesForCurrentRows() { }
 
 function bindRow(row) {
   if (row.__rfspBound) return;
@@ -657,97 +785,6 @@ document.addEventListener("keydown", (e) => {
       }
     });
   });
-})();
-
-// Fit fish frame to content height (works for listed and unlisted species)
-(function rfspFitFishFrameInit() {
-  function findFishFrame(doc = document) {
-    const frames = Array.from(doc.querySelectorAll("iframe, frame"));
-
-    // Look for frames with fish-related URLs
-    let found = frames.find(f => {
-      try {
-        const src = f.src || "";
-        return src.includes("/dataentry/listedfish.php") ||
-               src.includes("/dataentry/unlistedfish.php");
-      } catch {
-        return false;
-      }
-    });
-    if (found) return found;
-
-    // Fallback: Look for frames containing fish table elements
-    for (const f of frames) {
-      try {
-        const cd = f.contentDocument;
-        if (cd && cd.querySelector("td.fishdisplay, td.fishdisplayitalic")) return f;
-      } catch {}
-    }
-    return null;
-  }
-
-  function fitFrameHeight(frame) {
-    let cd, de, body;
-    try { cd = frame.contentDocument; de = cd?.documentElement; body = cd?.body; } catch { return; }
-    if (!cd || !de || !body) return;
-
-    frame.setAttribute("scrolling", "no");
-    try { frame.style.overflow = "hidden"; de.style.overflow = "visible"; body.style.overflow = "visible"; } catch {}
-
-    const h = Math.max(body.scrollHeight, body.offsetHeight, de.scrollHeight, de.offsetHeight, de.clientHeight);
-
-    const prev = frame.__rfspLastH || 0;
-    if (Math.abs(h - prev) < 2) return;
-    frame.__rfspLastH = h;
-
-    console.log("[REEF Suite - Frame] Fitting iframe to height:", h + "px");
-
-    cancelAnimationFrame(frame.__rfspRaf || 0);
-    frame.__rfspRaf = requestAnimationFrame(() => {
-      frame.style.height = h + "px";
-      frame.style.maxHeight = h + "px";
-      frame.style.width = "100%";
-      frame.style.border = "0";
-      frame.style.display = "block";
-    });
-  }
-
-  function trackFrame(frame) {
-    if (!frame || frame.__rfspFitBound) return;
-    frame.__rfspFitBound = true;
-
-    frame.addEventListener("load", () => fitFrameHeight(frame), { passive: true });
-    window.addEventListener("resize", () => fitFrameHeight(frame), { passive: true });
-
-    try {
-      const cd = frame.contentDocument;
-      const body = cd?.body;
-      if (body && "ResizeObserver" in window) {
-        const ro = new ResizeObserver(() => fitFrameHeight(frame));
-        ro.observe(body);
-        frame.__rfspBodyRO = ro;
-      }
-    } catch { }
-
-    fitFrameHeight(frame);
-    setTimeout(() => fitFrameHeight(frame), 150);
-    setTimeout(() => fitFrameHeight(frame), 450);
-  }
-
-  function boot() {
-    const f = findFishFrame();
-    if (f) {
-      console.log("[REEF Suite - Frame] Found fish iframe, tracking for auto-fit");
-      trackFrame(f);
-    }
-  }
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", boot, { once: true });
-  } else {
-    boot();
-  }
-  const lookout = new MutationObserver(() => boot());
-  lookout.observe(document.documentElement, { childList: true, subtree: true });
 })();
 
 // Fish table wrapping & centering
@@ -1031,10 +1068,12 @@ function rfspTagFishRowColumns(row) {
     });
   }
 
+  let currentPx = DEFAULT_SIZE;
+
   function readAndApply() {
     chrome.storage?.sync?.get({ fishFontSize: DEFAULT_SIZE }, items => {
-      const px = Number(items.fishFontSize ?? DEFAULT_SIZE) || DEFAULT_SIZE;
-      applySize(px);
+      currentPx = Number(items.fishFontSize ?? DEFAULT_SIZE) || DEFAULT_SIZE;
+      applySize(currentPx);
     });
   }
 
@@ -1046,12 +1085,17 @@ function rfspTagFishRowColumns(row) {
 
   chrome.storage?.onChanged?.addListener(changes => {
     if ("fishFontSize" in changes) {
-      const px = Number(changes.fishFontSize.newValue ?? DEFAULT_SIZE) || DEFAULT_SIZE;
-      applySize(px);
+      currentPx = Number(changes.fishFontSize.newValue ?? DEFAULT_SIZE) || DEFAULT_SIZE;
+      applySize(currentPx);
     }
   });
 
-  const mo = new MutationObserver(() => readAndApply());
+  // Re-apply to tables added later, debounced and without re-reading storage.
+  let moTimer = null;
+  const mo = new MutationObserver(() => {
+    clearTimeout(moTimer);
+    moTimer = setTimeout(() => applySize(currentPx), 250);
+  });
   mo.observe(document.documentElement, { childList: true, subtree: true });
 })();
 
@@ -1067,6 +1111,11 @@ function rfspTagFishRowColumns(row) {
 
   let currentRowIndex = -1;
   let fishRows = [];
+
+  // Any field where keystrokes should be left alone
+  const TYPING_SELECTOR =
+    "input:not([type='radio']):not([type='checkbox']):not([type='button']):not([type='submit']):not([type='reset']), " +
+    "textarea, select, [contenteditable]:not([contenteditable='false'])";
 
   // Detect the actual abundance values from the first select we find
   function detectAbundanceValues() {
@@ -1184,11 +1233,6 @@ function rfspTagFishRowColumns(row) {
     }
   }
 
-  // Update progress indicator - REMOVED
-  function updateProgressIndicator() {
-    // Status bar removed per user request
-  }
-
   // Navigate to next row
   function moveToNextRow() {
     if (currentRowIndex < fishRows.length - 1) {
@@ -1205,7 +1249,12 @@ function rfspTagFishRowColumns(row) {
 
   // Click-anywhere-on-row functionality
   function setupRowClickHandlers() {
-    fishRows.forEach((row, index) => {
+    fishRows.forEach((row) => {
+      // Rows keep their listeners across re-scans; only bind each row once.
+      // (Index is read from fishRows at click time so re-ordering is safe.)
+      if (row.__rfspUXBound) return;
+      row.__rfspUXBound = true;
+
       // Single click: just select the row, don't change value
       row.addEventListener("click", (e) => {
         // Don't interfere with clicks on inputs, labels, or links
@@ -1213,7 +1262,8 @@ function rfspTagFishRowColumns(row) {
         if (e.target.closest(".rfsp-presence-wrap")) return;
         if (e.target.closest(".fish-inline-preview")) return;
 
-        setActiveRow(index);
+        const index = fishRows.indexOf(row);
+        if (index >= 0) setActiveRow(index);
       });
 
       // Double click: cycle through abundance levels
@@ -1235,14 +1285,16 @@ function rfspTagFishRowColumns(row) {
   // Keyboard shortcuts
   function setupKeyboardShortcuts() {
     document.addEventListener("keydown", (e) => {
-      // Don't interfere if user is typing in an input field
-      if (e.target.matches("input[type='text'], input[type='number'], textarea, select")) {
-        return;
-      }
+      // Never swallow browser/OS shortcuts (Cmd+F, Ctrl+S, Cmd+A, ...)
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+
+      // Don't interfere if the user is typing in any text-like field
+      const t = e.target;
+      if (t && t.closest && t.closest(TYPING_SELECTOR)) return;
 
       // Number keys 0-4 and letter keys N,S,F,M,A for abundance
       const key = e.key.toLowerCase();
-      if (ABUNDANCE_KEYS.hasOwnProperty(key) && currentRowIndex >= 0) {
+      if (Object.prototype.hasOwnProperty.call(ABUNDANCE_KEYS, key) && currentRowIndex >= 0) {
         e.preventDefault();
         const row = fishRows[currentRowIndex];
         setAbundance(row, ABUNDANCE_KEYS[key]);
@@ -1270,8 +1322,9 @@ function rfspTagFishRowColumns(row) {
         return;
       }
 
-      // Enter or Tab to advance after selection
-      if ((e.key === "Enter" || e.key === "Tab") && currentRowIndex >= 0) {
+      // Enter to advance after selection (Tab is left alone so normal focus
+      // navigation out of the table keeps working)
+      if (e.key === "Enter" && currentRowIndex >= 0) {
         e.preventDefault();
         moveToNextRow();
         return;
@@ -1416,13 +1469,17 @@ function rfspTagFishRowColumns(row) {
       setActiveRow(0);
     }
 
-    // Watch for changes to re-bind new rows
+    // Watch for changes to re-bind new rows (debounced)
+    let rescanTimer = null;
     const observer = new MutationObserver(() => {
-      const newRows = findFishRows();
-      if (newRows.length !== fishRows.length) {
-        fishRows = newRows;
-        setupRowClickHandlers();
-      }
+      clearTimeout(rescanTimer);
+      rescanTimer = setTimeout(() => {
+        const newRows = findFishRows();
+        if (newRows.length !== fishRows.length) {
+          fishRows = newRows;
+          setupRowClickHandlers();
+        }
+      }, 250);
     });
     observer.observe(document.documentElement, { childList: true, subtree: true });
   }

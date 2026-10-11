@@ -1,9 +1,13 @@
 // content-unlisted.js — REEF DataEntry Suite Unlisted Species Improvements
 // Enhances unlisted species search and selection with recent species tracking
-// v1.0.0
+// Part of REEF DataEntry Suite (see manifest.json for version)
 
 (function rfspUnlistedImprovements() {
-  const LOG = (...args) => console.log("[REEF Suite - Unlisted]", ...args);
+  // Set to true to get verbose per-element tracing in the console.
+  const DEBUG = false;
+  const LOG = (...args) => { if (DEBUG) console.log("[REEF Suite - Unlisted]", ...args); };
+  const WARN = (...args) => console.warn("[REEF Suite - Unlisted]", ...args);
+  const escapeHtml = (v) => String(v ?? "").replace(/[&<>"']/g, m => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[m]));
   const RECENT_SPECIES_KEY = "rfsp_recent_unlisted_by_region";
   const MAX_RECENT = 20;
 
@@ -121,11 +125,6 @@
     });
   }
 
-  // Synchronous version that takes a callback
-  function addToRecentSpeciesSync(speciesData, callback) {
-    addToRecentSpecies(speciesData, callback);
-  }
-
   // Create recent species quick-access panel
   function createRecentSpeciesPanel() {
     LOG("createRecentSpeciesPanel called, recentSpecies.length:", recentSpecies.length);
@@ -166,7 +165,7 @@
     const regionDisplay = currentRegion && currentRegion !== 'unknown' ? ` (${currentRegion})` : '';
     panel.innerHTML = `
       <div class="rfsp-recent-header">
-        <h3>Recently Added Species${regionDisplay}</h3>
+        <h3>Recently Added Species${escapeHtml(regionDisplay)}</h3>
         <button type="button" class="rfsp-clear-recent">Clear All</button>
       </div>
       <div class="rfsp-recent-list">
@@ -175,12 +174,12 @@
             type="button"
             class="rfsp-recent-item"
             data-index="${index}"
-            data-species-id="${species.id}"
-            data-species-name="${species.name}"
-            title="Click to add ${species.name}"
+            data-species-id="${escapeHtml(species.id)}"
+            data-species-name="${escapeHtml(species.name)}"
+            title="Click to add ${escapeHtml(species.name)}"
           >
-            <span class="rfsp-recent-name">${species.name}</span>
-            ${species.scientific ? `<span class="rfsp-recent-sci">${species.scientific}</span>` : ''}
+            <span class="rfsp-recent-name">${escapeHtml(species.name)}</span>
+            ${species.scientific ? `<span class="rfsp-recent-sci">${escapeHtml(species.scientific)}</span>` : ''}
           </button>
         `).join('')}
       </div>
@@ -326,8 +325,13 @@
         }
       }
 
-      // If no match found, take the first element
-      const elementToClick = bestMatch || clickableElements[0];
+      // Only click something that actually matches the species; clicking an
+      // arbitrary element could trigger an unrelated action on the page.
+      if (!bestMatch) {
+        WARN("No search result matched", speciesData.name, "- nothing clicked. Please pick it from the results manually.");
+        return;
+      }
+      const elementToClick = bestMatch;
 
       LOG("Clicking element:", {
         text: elementToClick.textContent.substring(0, 100),
@@ -338,47 +342,6 @@
 
       elementToClick.click();
     }, 750); // Wait 750ms for search results to appear
-  }
-
-  // Enhance search results with keyboard navigation
-  function enhanceSearchResults() {
-    const results = document.getElementById('results');
-    if (!results) return;
-
-    // Add keyboard navigation to results
-    let currentIndex = -1;
-    const resultItems = Array.from(results.querySelectorAll('a, button'));
-
-    if (resultItems.length === 0) return;
-
-    document.addEventListener('keydown', (e) => {
-      // Only handle if results are visible
-      if (results.style.visibility === 'hidden') return;
-
-      if (e.key === 'ArrowDown') {
-        e.preventDefault();
-        currentIndex = Math.min(currentIndex + 1, resultItems.length - 1);
-        highlightResult(resultItems, currentIndex);
-      } else if (e.key === 'ArrowUp') {
-        e.preventDefault();
-        currentIndex = Math.max(currentIndex - 1, 0);
-        highlightResult(resultItems, currentIndex);
-      } else if (e.key === 'Enter' && currentIndex >= 0) {
-        e.preventDefault();
-        resultItems[currentIndex].click();
-      }
-    });
-  }
-
-  function highlightResult(items, index) {
-    items.forEach((item, i) => {
-      if (i === index) {
-        item.classList.add('rfsp-result-highlight');
-        item.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-      } else {
-        item.classList.remove('rfsp-result-highlight');
-      }
-    });
   }
 
   // Observe search results for changes
@@ -405,20 +368,22 @@
 
     observer.observe(results, { childList: true, subtree: true });
 
-    // Also observe the whole document body for changes (in case results div gets replaced)
+    // Also observe the whole document body for changes (in case results div gets replaced).
+    // Debounced, and only when the added nodes are outside our own panel.
     let bodyObserverTimeout;
-    const bodyObserver = new MutationObserver(() => {
-      // Throttle to avoid excessive calls
-      clearTimeout(bodyObserverTimeout);
-      bodyObserverTimeout = setTimeout(() => {
-        // Check if any new links appeared
-        const allLinks = document.querySelectorAll('a, button');
-        const unenhancedLinks = Array.from(allLinks).filter(link => !link.dataset.rfspEnhanced);
-        if (unenhancedLinks.length > 0) {
-          LOG("Detected", unenhancedLinks.length, "new unenhanced links");
-          enhanceResultItems();
+    const bodyObserver = new MutationObserver((muts) => {
+      let relevant = false;
+      for (const m of muts) {
+        for (const n of m.addedNodes) {
+          if (n.nodeType !== 1) continue;
+          if (n.closest && n.closest('.rfsp-recent-panel')) continue;
+          relevant = true; break;
         }
-      }, 300);
+        if (relevant) break;
+      }
+      if (!relevant) return;
+      clearTimeout(bodyObserverTimeout);
+      bodyObserverTimeout = setTimeout(enhanceResultItems, 300);
     });
     bodyObserver.observe(document.body, { childList: true, subtree: true });
 
@@ -517,7 +482,7 @@
           e.stopPropagation();
 
           LOG("Saving to recent species before navigation:", speciesData);
-          addToRecentSpeciesSync(speciesData, () => {
+          addToRecentSpecies(speciesData, () => {
             // Navigate after save completes
             LOG("Navigation to:", targetUrl);
             window.location.href = targetUrl;
@@ -607,7 +572,7 @@
 
     // Strategy 1: Look for specific child elements (spans, divs, etc)
     const childElements = Array.from(element.querySelectorAll('*'));
-    LOG("Child elements:", childElements.map(el => ({tag: el.tagName, text: el.textContent.trim().substring(0, 50)})));
+    if (DEBUG) LOG("Child elements:", childElements.map(el => ({tag: el.tagName, text: el.textContent.trim().substring(0, 50)})));
 
     // Try to identify which child contains what
     if (childElements.length > 0) {
@@ -799,6 +764,7 @@
   function initialize() {
     LOG("Initializing unlisted species improvements...");
 
+    currentRegion = detectRegion();
     injectStyles();
     loadRecentSpecies();
     observeResults();
@@ -806,7 +772,9 @@
     LOG("Initialization complete");
   }
 
-  // Expose test function to window for debugging
+  // Debug helpers. Note: content scripts run in an isolated world, so these are
+  // only reachable from DevTools when the console context is set to this extension.
+  if (DEBUG) {
   window.rfspTestAddSpecies = function(name, scientific) {
     const testSpecies = {
       id: Date.now().toString(),
@@ -828,10 +796,11 @@
     });
   };
 
-  // Announce script availability
-  window.__RFSP_UNLISTED_LOADED__ = true;
-  LOG("✅ Extension script successfully loaded and ready");
   LOG("Available test commands: rfspTestAddSpecies(), rfspShowRecent(), rfspShowRegion()");
+  }
+
+  // Announce script availability (used by diagnostic.md)
+  window.__RFSP_UNLISTED_LOADED__ = true;
 
   // Start when DOM is ready
   if (document.readyState === 'loading') {

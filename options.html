@@ -177,7 +177,6 @@
           <li><span class="key">↓</span><span class="key-desc">Next fish</span></li>
           <li><span class="key">↑</span><span class="key-desc">Previous fish</span></li>
           <li><span class="key">Enter</span><span class="key-desc">Advance to next row</span></li>
-          <li><span class="key">Tab</span><span class="key-desc">Advance to next row</span></li>
         </ul>
       </div>
 
@@ -215,7 +214,6 @@
 
   <h2>Fish Image Preview Settings</h2>
 
-  <!-- Add inside your existing options form -->
 <div class="field">
   <label for="fishFontSize"><strong>Fish table text size</strong> (<span id="fishFontSizeValue">14</span>px)</label>
   <input id="fishFontSize" type="range" min="10" max="24" step="1">
@@ -296,6 +294,33 @@
     </small>
   </div>
 </div>
+
+    <hr class="row" />
+
+    <!-- Show fish previews on unlisted pages -->
+    <div class="row">
+      <label for="showPreviewsOnUnlisted">Show fish previews on unlisted pages</label>
+      <div>
+        <input id="showPreviewsOnUnlisted" type="checkbox" style="width: auto;" />
+        <small class="hint">
+          When enabled, fish preview images will appear on unlisted fish entry pages. Disable to improve performance or reduce clutter on these pages.
+        </small>
+      </div>
+    </div>
+
+    <hr class="row" />
+
+    <!-- Auto-fit the data entry frame -->
+    <div class="row">
+      <label for="autoFitFrame">Auto-fit data entry frame</label>
+      <div>
+        <input id="autoFitFrame" type="checkbox" style="width: auto;" />
+        <small class="hint">
+          Grows the inset data entry frame (listed and unlisted species pages) to the height of its content so the whole page scrolls as one, instead of scrolling inside a small box. Default: on.
+        </small>
+      </div>
+    </div>
+  </div>
 
   <div class="actions">
     <button id="save" type="button">Save</button>

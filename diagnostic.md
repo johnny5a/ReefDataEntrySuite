@@ -1,8 +1,12 @@
-# 🔍 REEF Extension Diagnostic - Version 1.1.1
+# 🔍 REEF Extension Diagnostic
 
 ## Run This First
 
 **In the browser console, paste this:**
+
+> Content scripts run in an isolated world. In DevTools, switch the console
+> context dropdown (top-left of the Console panel) from "top" to
+> "REEF DataEntry Suite" before running these, or the variables will be undefined.
 
 ```javascript
 console.log("URL:", window.location.href);
@@ -14,7 +18,7 @@ console.log("In iframe?:", window !== window.top);
 
 **If `Extension loaded?: true`** ✅
 - Extension is working! 
-- Commands available: `rfspTestAddSpecies()`, `rfspShowRecent()`
+- Debug commands (`rfspTestAddSpecies()`, `rfspShowRecent()`, `rfspShowRegion()`) are available when `DEBUG = true` is set at the top of `content-unlisted.js`
 
 **If `Extension loaded?: undefined`** ❌
 - Extension NOT loading on this page
@@ -26,7 +30,7 @@ console.log("In iframe?:", window !== window.top);
 1. **Reload Extension**
    - chrome://extensions/
    - Find "REEF DataEntry Suite" 
-   - Verify version = **1.1.1**
+   - Verify the version matches `manifest.json`
    - Click reload ⟳
 
 2. **Hard Refresh Page**

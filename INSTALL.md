@@ -17,7 +17,7 @@ The combined extension is located at:
 6. Click **"Select"** or **"Open"**
 
 ### Step 3: Verify Installation
-You should see "REEF DataEntry Suite v1.0.0" appear in your extensions list with:
+You should see "REEF DataEntry Suite" (version from `manifest.json`) appear in your extensions list with:
 - A green/blue icon
 - Status showing "Enabled"
 - Description mentioning navigation controls, fish previews, and maps

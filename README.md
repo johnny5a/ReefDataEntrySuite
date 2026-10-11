@@ -61,20 +61,22 @@ Right-click the extension icon and select "Options" to customize:
 - **Popup dimensions**: Maximum width and height for hover popups
 - **Fish table max width**: Maximum width for the centered data entry table
 - **Fish table font size**: Text size for the fish data table (10-24px)
+- **Show fish previews on unlisted pages**: Toggle thumbnails on the unlisted-species pages
+- **Auto-fit data entry frame**: Grow the inset data-entry frame to fit its content so the whole page scrolls as one (on by default)
 
 ## Technical Details
 
 ### Files
 - `manifest.json`: Extension configuration (Manifest V3)
-- `content-main.js`: Main page functionality (navigation toolbar + interactive map)
-- `content-frame.js`: Iframe functionality (fish previews + frame message handlers)
-- `background.js`: Service worker for FishBase API requests with CORS handling
+- `content-main.js`: Main page functionality (navigation toolbar + iframe auto-fit)
+- `content-map.js`: Interactive site map on site-search result pages
+- `content-frame.js`: Iframe functionality (fish previews, keyboard shortcuts, frame message handlers)
+- `content-unlisted.js`: Recently-added species panel on unlisted/addfish pages
+- `background.js`: Service worker for FishBase lookups
 - `styles.css`: Combined styles for all features
 - `options.html` / `options.js`: Settings interface
 
 ### Permissions
-- `activeTab`: Access to the current tab
-- `declarativeNetRequest`: Inject CORS headers for FishBase requests
 - `storage`: Save user preferences and cached fish images
 - `https://www.fishbase.se/*`: Fetch fish images and data
 - `https://tile.openstreetmap.org/*`: Load map tiles
@@ -86,7 +88,15 @@ Right-click the extension icon and select "Options" to customize:
 
 ## Version History
 
-### v1.0.0 (Current)
+See [CHANGELOG.md](CHANGELOG.md) for the full list of changes.
+
+### v1.4.0 (Current)
+- Data-entry frame auto-fits its content (no more scrolling inside the inset)
+- Keyboard shortcuts no longer intercept Cmd/Ctrl shortcuts or Tab
+- Fewer permissions (`declarativeNetRequest` and `activeTab` removed)
+- Map code consolidated into `content-map.js`; performance and safety cleanups
+
+### v1.0.0
 - Initial combined release
 - Merged functionality from three separate extensions:
   - **Buttons** (v2.4.2): Navigation controls

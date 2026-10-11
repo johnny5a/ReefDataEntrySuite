@@ -1,34 +1,8 @@
-// background.js (MV3)
-// - Inject CORS header for FishBase via Declarative Net Request (dynamic rule)
-// - Fetch FishBase summary HTML with fetch()
+// background.js (MV3 service worker)
+// - Fetch FishBase summary HTML with fetch(). The extension holds a host
+//   permission for www.fishbase.se, so no CORS workaround is needed.
 // - Parse og:image or main species photo
 // - Respond to {type:"fb.image", scientificName} with {url, image}
-
-async function ensureCorsRule() {
-  const RULE_ID = 90001;
-  await chrome.declarativeNetRequest.updateDynamicRules({
-    removeRuleIds: [RULE_ID],
-    addRules: [{
-      id: RULE_ID,
-      priority: 1,
-      action: {
-        type: "modifyHeaders",
-        responseHeaders: [
-          { header: "access-control-allow-origin", operation: "set", value: "*" },
-          { header: "access-control-allow-headers", operation: "set", value: "*" },
-          { header: "access-control-allow-methods", operation: "set", value: "GET, OPTIONS" }
-        ]
-      },
-      condition: {
-        resourceTypes: ["xmlhttprequest", "sub_frame", "main_frame", "script"],
-        urlFilter: "||fishbase.se/summary/"
-      }
-    }]
-  });
-}
-
-chrome.runtime.onInstalled.addListener(() => { ensureCorsRule(); });
-chrome.runtime.onStartup.addListener(() => { ensureCorsRule(); });
 
 async function fetchText(url) {
   const res = await fetch(url, { method: "GET" });
@@ -38,6 +12,14 @@ async function fetchText(url) {
 
 function absolutize(url, base) {
   try { return new URL(url, base).toString(); } catch { return url; }
+}
+
+// FishBase's og:image points to www.fishbase.us, which 403s on hotlinked
+// image requests. The same path is served by www.fishbase.se without that
+// restriction, so rewrite to keep images loadable.
+function rewriteImageHost(url) {
+  if (!url) return url;
+  return url.replace(/^(https?:\/\/)www\.fishbase\.us\//i, "$1www.fishbase.se/");
 }
 
 function extractOgImage(html) {
@@ -58,7 +40,7 @@ function extractMainPhoto(html, baseUrl) {
 function normalizeScientificName(raw) {
   return String(raw)
     .replace(/[()]/g, "")
-    .replace(/\b(cf\.|aff\.|sp\.|spp\.)\b.*$/i, "")
+    .replace(/\s+(cf|aff|sp|spp)\.?(\s.*)?$/i, "")
     .replace(/[^\p{L}\-\s]/gu, " ")
     .replace(/\s+/g, " ")
     .trim();
@@ -84,7 +66,7 @@ async function fbSummarySmart(genus, species) {
       const html = await fetchText(url);
       const og  = extractOgImage(html);
       const img = og ? absolutize(og, url) : extractMainPhoto(html, url);
-      if (img) return { url, image: img };
+      if (img) return { url, image: rewriteImageHost(img) };
     } catch {
       // try next
     }

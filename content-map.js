@@ -1,5 +1,6 @@
-// content.js — RFSP Map inset with Near Me tab, mouse-centered zoom, dblclick zoom, active pin styling
-// v3.21  — adds "Show on map only" toggle and defaults radius to 25 mi
+// content-map.js — REEF DataEntry Suite site map inset
+// Near Me tab, mouse-centered zoom, dblclick zoom, active pin styling, "Show on map only" toggle.
+// Runs on REEF site-search result pages (www.reef.org); sole owner of the map UI.
 (function () {
   "use strict";
 
@@ -547,7 +548,7 @@ function clearActiveSelectionAndField() {
       if (!el) return;
       const zc = (el.dataset.zonecode || "").trim();
       const nm = (el.dataset.title || "").trim();
-      ensureInfo().innerHTML = `<b>${nm || "Site"}</b><br>Zone: ${zc || "(unknown)"}<br>Lat/Lng: ${Number(el.dataset.lat).toFixed(6)}, ${Number(el.dataset.lng).toFixed(6)}`;
+      setInfo(nm, zc, Number(el.dataset.lat), Number(el.dataset.lng));
 
       if (zoneToLatLng.has(zc)) {
         const [lat, lng] = zoneToLatLng.get(zc);
@@ -557,6 +558,14 @@ function clearActiveSelectionAndField() {
       triggerChangeZone(zc, nm);
       e.stopPropagation();
     });
+  }
+  function setInfo(name, zonecode, lat, lng) {
+    const info = ensureInfo();
+    info.replaceChildren();
+    const b = document.createElement("b"); b.textContent = name || "Site";
+    info.append(b, document.createElement("br"),
+      `Zone: ${zonecode || "(unknown)"}`, document.createElement("br"),
+      `Lat/Lng: ${Number(lat).toFixed(6)}, ${Number(lng).toFixed(6)}`);
   }
   function ensureInfo() {
     let info = document.getElementById("rfsp-info");
@@ -603,8 +612,7 @@ function clearActiveSelectionAndField() {
         const [lat, lng] = zoneToLatLng.get(zc);
         zoomToLatLng(lat, lng, 11);
         setActiveMarkerByZone(zc);
-        ensureInfo().innerHTML =
-          `<b>${(nm || "Site")}</b><br>Zone: ${zc || "(unknown)"}<br>Lat/Lng: ${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+        setInfo(nm, zc, lat, lng);
       }
       triggerChangeZone(zc, nm);
     });
@@ -706,7 +714,7 @@ function clearActiveSelectionAndField() {
         tr.style.cursor = "pointer";
         tr.addEventListener("mouseenter", () => tr.style.background = "#f3f4f6");
         tr.addEventListener("mouseleave", () => tr.style.background = "");
-        tr.innerHTML = `<td style="padding:4px 6px;">${it.zonecode}</td>
+        tr.innerHTML = `<td style="padding:4px 6px;">${escapeHtml(it.zonecode)}</td>
           <td style="padding:4px 6px;">${escapeHtml(it.name)}</td>
           <td style="padding:4px 6px;">${mi(it.dist)} mi</td>`;
         tbody.appendChild(tr);
@@ -736,7 +744,7 @@ function clearActiveSelectionAndField() {
       tr.style.cursor = "pointer";
       tr.addEventListener("mouseenter", () => tr.style.background = "#f3f4f6");
       tr.addEventListener("mouseleave", () => tr.style.background = "");
-      tr.innerHTML = `<td style="padding:4px 6px;">${it.zonecode}</td>
+      tr.innerHTML = `<td style="padding:4px 6px;">${escapeHtml(it.zonecode)}</td>
         <td style="padding:4px 6px;">${escapeHtml(it.name)}</td>
         ${showGpsBadge ? `<td style="padding:4px 6px;">${gpsSet.has(it.zonecode) ? "✔︎" : "—"}</td>` : ""}`;
       tbody.appendChild(tr);

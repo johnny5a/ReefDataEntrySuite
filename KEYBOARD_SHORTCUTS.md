@@ -20,7 +20,7 @@ The extension now includes powerful keyboard shortcuts to speed up fish data ent
 #### Navigation
 - **Arrow Down** = Move to next fish row
 - **Arrow Up** = Move to previous fish row
-- **Enter** or **Tab** = Advance to next row
+- **Enter** = Advance to next row (Tab keeps its normal browser behavior)
 - **Spacebar** = For abundance surveys: Toggle between "None" and your last selected abundance level
 - **Spacebar** = For species surveys: Check/uncheck the "Present" checkbox
 
@@ -48,7 +48,7 @@ The extension provides clear visual indicators:
 #### For Abundance Surveys:
 1. Click on the first fish row to make it active (or press Arrow Down)
 2. Use number keys (0-4) or letter keys (N/S/F/M/A) to quickly set abundance
-3. Press Enter or Tab to automatically move to the next row
+3. Press Enter to automatically move to the next row
 4. Repeat steps 2-3 for rapid data entry
 5. Use Arrow Up/Down to navigate back if you need to review or change entries
 6. Use Spacebar to quickly toggle a species between "None" and your last selected value
@@ -56,8 +56,8 @@ The extension provides clear visual indicators:
 #### For Species Surveys (Checkbox):
 1. Click on the first fish row to make it active (or press Arrow Down)
 2. Press Spacebar to check "Present" for species you saw
-3. Press Enter or Tab to move to next row
-4. For species you didn't see, just press Enter/Tab to skip (leaves unchecked)
+3. Press Enter to move to next row
+4. For species you didn't see, just press Enter to skip (leaves unchecked)
 5. Use Spacebar again to uncheck if you made a mistake
 
 ### Tips for Efficient Entry
