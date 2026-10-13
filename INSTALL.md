@@ -2,18 +2,15 @@
 
 ## Quick Start
 
-### Step 1: Locate the Extension
-The combined extension is located at:
-```
-~/Documents/Projects/ReefDataEntrySuite/
-```
+### Step 1: Download latest release
+Download latest release from GitHub and unzip. Copy Folder location
 
 ### Step 2: Load in Chrome
 1. Open Google Chrome
 2. Navigate to `chrome://extensions/`
 3. Toggle **"Developer mode"** ON (top-right corner)
 4. Click **"Load unpacked"** button
-5. Navigate to and select the `ReefDataEntrySuite` folder
+5. Navigate to and select the `ReefDataEntrySuite` folder location from Step 1
 6. Click **"Select"** or **"Open"**
 
 ### Step 3: Verify Installation

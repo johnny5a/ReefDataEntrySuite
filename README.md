@@ -90,13 +90,14 @@ Right-click the extension icon and select "Options" to customize:
 
 See [CHANGELOG.md](CHANGELOG.md) for the full list of changes.
 
-### v1.4.0 (Current)
+### v2026.10.12 (Current)
 - Data-entry frame auto-fits its content (no more scrolling inside the inset)
 - Keyboard shortcuts no longer intercept Cmd/Ctrl shortcuts or Tab
 - Fewer permissions (`declarativeNetRequest` and `activeTab` removed)
 - Map code consolidated into `content-map.js`; performance and safety cleanups
 
-### v1.0.0
+### v2028.02.28
+- First Release on GitHub
 - Initial combined release
 - Merged functionality from three separate extensions:
   - **Buttons** (v2.4.2): Navigation controls
@@ -117,7 +118,3 @@ Developed for the REEF (Reef Environmental Education Foundation) community to st
 ## Support
 
 For issues, feature requests, or questions about this extension, please refer to the REEF data entry documentation or contact the extension developer.
-
-## License
-
-This extension is provided as-is for use with REEF data entry. Fish data and images remain property of FishBase. Map data © OpenStreetMap contributors.
