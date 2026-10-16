@@ -32,7 +32,7 @@ The extension uses **four separate content scripts** that load in different cont
    - Key functions: `sendFamilies()`, `scanFamilyRows()`, message listeners
 
 3. **content-map.js** (~840 lines)
-   - Runs on REEF site search result pages (all `www.reef.org` pages except `/dataentry`)
+   - Runs on every `https://*.reef.org/*` page **in all frames**: the data-entry site search lives inside the `data.reef.org` iframe, so don't narrow this to the top window or to www.reef.org
    - Sole owner of the map UI (an older duplicate in content-main.js was removed in 1.4.0)
    - Implements custom tile-based map renderer (MicroMap class)
    - Shows markers for survey sites, with "Near Me" geolocation feature

@@ -90,7 +90,11 @@ Right-click the extension icon and select "Options" to customize:
 
 See [CHANGELOG.md](CHANGELOG.md) for the full list of changes.
 
-### v2026.10.12 (Current)
+### v2026.10.14 (Current)
+- Site map restored on the data-entry site search
+- Fish thumbnails no longer break on `fishbase.us` image addresses
+
+### v2026.10.12
 - Data-entry frame auto-fits its content (no more scrolling inside the inset)
 - Keyboard shortcuts no longer intercept Cmd/Ctrl shortcuts or Tab
 - Fewer permissions (`declarativeNetRequest` and `activeTab` removed)

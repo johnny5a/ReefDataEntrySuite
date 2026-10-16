@@ -19,7 +19,7 @@ function absolutize(url, base) {
 // restriction, so rewrite to keep images loadable.
 function rewriteImageHost(url) {
   if (!url) return url;
-  return url.replace(/^(https?:\/\/)www\.fishbase\.us\//i, "$1www.fishbase.se/");
+  return url.replace(/^(https?:\/\/)(?:www\.)?fishbase\.us\//i, "$1www.fishbase.se/");
 }
 
 function extractOgImage(html) {

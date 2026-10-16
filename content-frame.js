@@ -384,7 +384,7 @@ function renderTip(info) {
   actions.append(pinBtn, closeBtn);
 
   const img = document.createElement("img");
-  img.src = image; img.alt = sci || ""; img.referrerPolicy = "no-referrer";
+  img.src = fixImageHost(image); img.alt = sci || ""; img.referrerPolicy = "no-referrer";
   img.style.cssText = `max-width:${POPUP_IMG_MAX_WIDTH}px; max-height:${POPUP_IMG_MAX_HEIGHT}px; width:auto; height:auto; display:block; border-radius:4px;`;
 
   inner.append(actions, img);
@@ -446,8 +446,8 @@ chrome.storage.local.get({ rfspImageCache: {} }, (res) => {
   for (const key of Object.keys(persistentCache)) {
     const entry = persistentCache[key];
     const img = entry?.data?.image;
-    if (typeof img === "string" && /^https?:\/\/www\.fishbase\.us\//i.test(img)) {
-      entry.data.image = img.replace(/^(https?:\/\/)www\.fishbase\.us\//i, "$1www.fishbase.se/");
+    if (typeof img === "string" && FB_US_RE.test(img)) {
+      entry.data.image = fixImageHost(img);
       migrated = true;
     }
   }
@@ -457,6 +457,14 @@ chrome.storage.local.get({ rfspImageCache: {} }, (res) => {
 // Found images are kept indefinitely; "not found" results are remembered for
 // a week so species FishBase doesn't know aren't re-fetched on every page load.
 const NEGATIVE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+
+// www.fishbase.us blocks embedded images (403 / bot check); www.fishbase.se
+// serves the same paths without that. Applied to every image URL right before
+// display, so stale cache entries from older versions can't slip through.
+const FB_US_RE = /^(https?:\/\/)(?:www\.)?fishbase\.us\//i;
+function fixImageHost(url) {
+  return typeof url === "string" ? url.replace(FB_US_RE, "$1www.fishbase.se/") : url;
+}
 
 function getPersistedInfo(sci) {
   const entry = persistentCache?.[sci];
@@ -616,7 +624,7 @@ async function populateInlinePreview(row, sci) {
   img.alt = sci;
   img.referrerPolicy = "no-referrer";
   img.decoding = "async";
-  img.src = info.image;
+  img.src = fixImageHost(info.image);
 
   a.appendChild(img);
   wrap.appendChild(a);

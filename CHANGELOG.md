@@ -2,7 +2,26 @@
 
 All notable changes to the REEF DataEntry Suite extension.
 
-## [1.4.0] - 2026-10-11
+## [2026.10.14] - 2026-10-14
+
+### Fixed
+- **Site map stopped appearing.** The 1.4.0 consolidation narrowed
+  `content-map.js` to top-level `www.reef.org` pages and excluded `/dataentry`,
+  but the site search runs inside the `data.reef.org` data-entry frame. The map
+  script again matches `https://*.reef.org/*` in all frames, as it did before.
+
+## [2026.10.12] - 2026-10-12
+
+Versioning now follows the date-based scheme used on GitHub (`YYYY.MM.DD`).
+Includes everything listed under 1.4.0 below, plus:
+
+### Fixed
+- Fish thumbnails showed as broken images when an image address pointed at
+  `fishbase.us` (which blocks embedded images behind a bot check). Every image
+  URL is now rewritten to `www.fishbase.se` right before display, in addition
+  to the existing rewrite in the background worker and the cache migration.
+
+## [1.4.0] - 2026-10-11 (unreleased; folded into 2026.10.12)
 
 ### Added
 - **Data-entry frame auto-fit.** The `data.reef.org` iframe on the data entry page
