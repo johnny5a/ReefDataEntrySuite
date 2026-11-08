@@ -280,11 +280,11 @@
         if (text.length === 0) return false;
 
         // Skip UI elements
-        if (text === 'Clear All' || text === '📍' || text === '❌' || text === 'View on FishBase') return false;
+        if (text === 'Clear All' || text === '📍' || text === '❌' || text === 'View on FishBase' || text === 'View on iNaturalist') return false;
 
         // Skip FishBase links
         const href = el.getAttribute('href') || '';
-        if (href.includes('fishbase.se')) return false;
+        if (href.includes('fishbase.se') || href.includes('inaturalist.org')) return false;
 
         // For elements in results container, must be marked as enhanced or have data attributes
         if (resultsContainer && resultsContainer !== document.body) {
@@ -513,8 +513,8 @@
 
     // If it's a link element, apply href filters
     if (href) {
-      if (href.includes('fishbase.se')) {
-        LOG("Skipping - FishBase external link");
+      if (href.includes('fishbase.se') || href.includes('inaturalist.org')) {
+        LOG("Skipping - FishBase/iNaturalist external link");
         return null;
       }
 
@@ -526,7 +526,7 @@
     }
 
     // Skip if it's a known UI element
-    if (text === 'Clear All' || text === '📍' || text === '❌' || text === 'View on FishBase') {
+    if (text === 'Clear All' || text === '📍' || text === '❌' || text === 'View on FishBase' || text === 'View on iNaturalist') {
       LOG("Skipping - UI element");
       return null;
     }

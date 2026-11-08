@@ -361,8 +361,12 @@ function placeTipNearElement(el) {
   tip.style.display = "block";
 }
 
+function sourceLabel(info) {
+  return info?.source === "inat" ? "iNaturalist" : "FishBase";
+}
+
 function renderTip(info) {
-  const { image, url, sci } = info;
+  const { image, url, sci, credit } = info;
   // Built with DOM APIs (not innerHTML) so values from FishBase/REEF pages are
   // never interpreted as markup.
   tip.replaceChildren();
@@ -389,6 +393,14 @@ function renderTip(info) {
 
   inner.append(actions, img);
 
+  if (credit) {
+    const cr = document.createElement("div");
+    cr.className = "fish-tip-credit";
+    cr.style.cssText = "font-size:10px;color:#666;margin-top:4px;line-height:1.3;";
+    cr.textContent = credit;
+    inner.appendChild(cr);
+  }
+
   if (url) {
     const linkWrap = document.createElement("div");
     linkWrap.className = "fish-tip-link";
@@ -396,7 +408,7 @@ function renderTip(info) {
     const a = document.createElement("a");
     a.href = url; a.target = "_blank"; a.rel = "noopener";
     a.style.cssText = "color:#0b70ff;text-decoration:none;";
-    a.textContent = "View on FishBase";
+    a.textContent = "View on " + sourceLabel(info);
     linkWrap.appendChild(a);
     inner.appendChild(linkWrap);
   }
@@ -451,7 +463,18 @@ chrome.storage.local.get({ rfspImageCache: {} }, (res) => {
       migrated = true;
     }
   }
-  if (migrated) chrome.storage.local.set({ rfspImageCache: persistentCache });
+  // Cache v2 (iNaturalist fallback): forget "not found" results recorded
+  // before the fallback existed, so invertebrates and algae get looked up again
+  // right away instead of after the 7-day retry window.
+  chrome.storage.local.get({ rfspImageCacheVer: 1 }, (v) => {
+    if ((v.rfspImageCacheVer || 1) < 2) {
+      for (const key of Object.keys(persistentCache)) {
+        if (!persistentCache[key]?.data) { delete persistentCache[key]; migrated = true; }
+      }
+      chrome.storage.local.set({ rfspImageCacheVer: 2 });
+    }
+    if (migrated) chrome.storage.local.set({ rfspImageCache: persistentCache });
+  });
 });
 
 // Found images are kept indefinitely; "not found" results are remembered for
@@ -515,7 +538,12 @@ async function requestFishbaseInfo(scientificName) {
     new Promise((resolve) => {
       chrome.runtime.sendMessage({ type: "fb.image", scientificName }, (resp) => {
         let out = null;
-        if (resp && resp.ok) out = { image: resp.data?.image || null, url: resp.data?.url || null };
+        if (resp && resp.ok) out = {
+          image: resp.data?.image || null,
+          url: resp.data?.url || null,
+          source: resp.data?.source || "fishbase",
+          credit: resp.data?.credit || null
+        };
         cache.set(scientificName, out);
         setPersistedInfo(scientificName, out);
         inflight.delete(scientificName);
@@ -618,7 +646,7 @@ async function populateInlinePreview(row, sci) {
   a.href = info.url || "#";
   a.target = "_blank";
   a.rel = "noopener";
-  a.title = info.url ? "Open on FishBase" : sci;
+  a.title = info.url ? "Open on " + sourceLabel(info) : sci;
 
   const img = document.createElement("img");
   img.alt = sci;

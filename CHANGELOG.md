@@ -2,6 +2,22 @@
 
 All notable changes to the REEF DataEntry Suite extension.
 
+## [2026.11.08] - 2026-11-08
+
+### Added
+- **Photos for invertebrates and algae.** FishBase only covers fish, so species
+  on invert-inclusive survey lists (e.g. California / Pacific Coast) had no
+  thumbnail. When FishBase has no photo, the extension now looks the species up
+  on iNaturalist and shows its default photo. Only exact name matches (or
+  synonyms) are used; genus-only entries such as "Metridium spp." get the
+  genus photo. The popup shows the photographer credit and links to
+  iNaturalist.
+- New host permission: `https://api.inaturalist.org/*`.
+
+### Changed
+- "Not found" results cached by older versions are cleared once on update, so
+  invertebrates are retried immediately instead of after the 7-day window.
+
 ## [2026.10.14] - 2026-10-14
 
 ### Fixed

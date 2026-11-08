@@ -11,7 +11,7 @@ A comprehensive Chrome extension that combines three powerful tools for REEF (Re
 - **Smart Scrolling**: Automatically aligns the selected family to optimal viewing position
 
 ### 🐠 Fish Image Previews
-- **Inline Thumbnails**: Displays fish images from FishBase directly in the data entry table
+- **Inline Thumbnails**: Displays species photos directly in the data entry table: fish from FishBase, invertebrates and algae from iNaturalist
 - **Hover Popups**: Larger preview images appear on hover with customizable delay
 - **Persistent Cache**: Stores fetched fish images locally for faster subsequent loads
 - **Enhanced Selectors**: Radio buttons and checkboxes replace dropdown menus for abundance/presence fields
@@ -79,18 +79,23 @@ Right-click the extension icon and select "Options" to customize:
 ### Permissions
 - `storage`: Save user preferences and cached fish images
 - `https://www.fishbase.se/*`: Fetch fish images and data
+- `https://api.inaturalist.org/*`: Look up invertebrate and algae photos
 - `https://tile.openstreetmap.org/*`: Load map tiles
 - `https://*.reef.org/*`: Access REEF data entry pages
 
 ### Data Sources
 - **Fish Images**: [FishBase](https://www.fishbase.se/) - Global fish species database
+- **Invertebrate & Algae Images**: [iNaturalist](https://www.inaturalist.org/) - community photos, credited in the popup
 - **Maps**: [OpenStreetMap](https://www.openstreetmap.org/) - Open-source mapping data
 
 ## Version History
 
 See [CHANGELOG.md](CHANGELOG.md) for the full list of changes.
 
-### v2026.10.14 (Current)
+### v2026.11.08 (Current)
+- Photos for invertebrates and algae (iNaturalist fallback when FishBase has none)
+
+### v2026.10.14
 - Site map restored on the data-entry site search
 - Fish thumbnails no longer break on `fishbase.us` image addresses
 
@@ -117,6 +122,7 @@ Developed for the REEF (Reef Environmental Education Foundation) community to st
 
 **Data Sources:**
 - Fish species data and images: [FishBase](https://www.fishbase.se/)
+- Invertebrate and algae photos: [iNaturalist](https://www.inaturalist.org/) contributors (credited per photo)
 - Map tiles: [OpenStreetMap](https://www.openstreetmap.org/) contributors
 
 ## Support

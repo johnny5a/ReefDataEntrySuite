@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "REEF DataEntry Suite",
-  "version": "2026.10.14",
-  "description": "Complete REEF data entry toolkit: navigation controls, fish image previews from FishBase, and interactive site maps with GPS.",
+  "version": "2026.11.08",
+  "description": "Complete REEF data entry toolkit: navigation controls, fish and invertebrate image previews (FishBase, iNaturalist), and interactive site maps with GPS.",
   "icons": {
     "16": "icon16.png",
     "48": "icon48.png",
@@ -13,6 +13,7 @@
   ],
   "host_permissions": [
     "https://www.fishbase.se/*",
+    "https://api.inaturalist.org/*",
     "https://tile.openstreetmap.org/*",
     "https://*.reef.org/*"
   ],

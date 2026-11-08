@@ -107,6 +107,8 @@ The background worker tries multiple URL patterns to find fish images:
 
 Scientific names are normalized: remove parentheses, strip "cf.", "aff.", "sp.", "spp.", extract genus+species only.
 
+If FishBase has no photo (invertebrates, algae) or the name is genus-only, `inatLookup()` queries `https://api.inaturalist.org/v1/taxa?q=...` and accepts only a result whose `name` or `matched_term` equals the query exactly. The response carries `source: "inat"` and `credit` (photo attribution), which the popup displays; keep the credit visible.
+
 ### Keyboard Shortcuts (content-frame.js)
 
 Shortcuts only work when NOT focused in a text input:
@@ -126,14 +128,14 @@ Custom map renderer without external libraries:
 
 ### Storage Keys
 
-- `chrome.storage.local.rfspImageCache`: Persistent FishBase lookup cache keyed by normalized scientific name. Entries are `{ data: {image,url} | null, ts }`; `null` = known miss, retried after 7 days. Writes are debounced (500 ms).
+- `chrome.storage.local.rfspImageCache`: Persistent FishBase lookup cache keyed by normalized scientific name. Entries are `{ data: {image,url,source,credit} | null, ts }`; `rfspImageCacheVer` (currently 2) drives one-time cache migrations; `null` = known miss, retried after 7 days. Writes are debounced (500 ms).
 - `chrome.storage.sync` (one key per setting): `hoverDelay`, `tooltipPosition`, `thumbHeight`, `popupWidth`, `popupImgMaxWidth`, `popupImgMaxHeight`, `fishTableMaxWidth`, `fishFontSize`, `showPreviewsOnUnlisted`, `autoFitFrame`
 - `chrome.storage.local.rfsp_recent_unlisted_by_region`: Recent unlisted species (MAX_RECENT=20)
 
 ## Permissions Requirements
 
 - `storage`: Save settings and fish image cache
-- Host permissions (https only): `*.reef.org`, `www.fishbase.se`, `tile.openstreetmap.org`
+- Host permissions (https only): `*.reef.org`, `www.fishbase.se`, `api.inaturalist.org`, `tile.openstreetmap.org`
 
 ## Common Gotchas
 
@@ -157,7 +159,7 @@ Custom map renderer without external libraries:
 
 ```
 manifest.json          - Extension config (V3), content_scripts mapping
-background.js          - Service worker for FishBase API
+background.js          - Service worker for FishBase + iNaturalist lookups
 content-main.js        - Navigation toolbar + messaging + iframe auto-fit
 content-frame.js       - Fish previews + keyboard shortcuts + size reporting
 content-map.js         - Custom map renderer
